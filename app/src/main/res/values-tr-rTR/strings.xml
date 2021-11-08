@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Top Movies</string>
+    <string name="profile">Profil</string>
+    <string name="friends_list">Arkadaş Listesi</string>
+    <string name="top_movies">En iyi filmler</string>
+</resources>
