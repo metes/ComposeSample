@@ -27,6 +27,7 @@ class ApiRequester: KoinComponent {
     }
 
     sealed class APIResult<T> {
+        class Idle<T> : APIResult<T>()
         class Loading<T> : APIResult<T>()
         data class HTTPException<T>(val exception: HttpException) : APIResult<T>()
         data class GeneralException<T>(val exception: Exception) : APIResult<T>()

@@ -20,19 +20,20 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.compose.R
-import com.compose.ui.screen.MovieListScreen
 import com.compose.ui.screen.ProfileScreen
+import com.compose.ui.screen.movieList.MovieListRepo
+import com.compose.ui.screen.movieList.MovieListScreen
 import com.compose.ui.theme.TopMoviesTheme
-import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
-
-    private val viewModel by viewModel<MainViewModel>()
 
     private val items = listOf(
         AppScreen.Currency,
         AppScreen.FriendsList,
     )
+
+    private val movieListRepo by inject<MovieListRepo>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +48,12 @@ class MainActivity : ComponentActivity() {
                             val currentDestination = navBackStackEntry?.destination
                             items.forEach { screen ->
                                 BottomNavigationItem(
-                                    icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
+                                    icon = {
+                                        Icon(
+                                            Icons.Filled.Favorite,
+                                            contentDescription = null
+                                        )
+                                    },
                                     label = { Text(stringResource(screen.resourceId)) },
                                     selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                                     onClick = {
@@ -76,35 +82,34 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable(AppScreen.Currency.route) {
-                            MovieListScreen(viewModel)
+                            MovieListScreen(repository = movieListRepo)
                         }
                         composable(AppScreen.FriendsList.route) {
-                            ProfileScreen(navController, viewModel)
+                            ProfileScreen(navController)
                         }
                     }
                 }
             }
         }
+
+    }
+
+    sealed class AppScreen(val route: String, @StringRes val resourceId: Int) {
+        object Currency : AppScreen("Movies", R.string.top_movies)
+        object FriendsList : AppScreen("Profile", R.string.profile)
     }
 
 
-}
+    @Composable
+    fun Greeting(name: String) {
+        Text(text = "Hello $name!")
+    }
 
-sealed class AppScreen(val route: String, @StringRes val resourceId: Int) {
-    object Currency : AppScreen("Movies", R.string.top_movies)
-    object FriendsList : AppScreen("Profile", R.string.profile)
-}
-
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    TopMoviesTheme {
-        Greeting("Android")
+    @Preview(showBackground = true)
+    @Composable
+    fun DefaultPreview() {
+        TopMoviesTheme {
+            Greeting("Android")
+        }
     }
 }

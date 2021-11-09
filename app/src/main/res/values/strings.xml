@@ -3,4 +3,5 @@
     <string name="profile">Profile</string>
     <string name="friends_list">Friend List</string>
     <string name="top_movies">Top Movies</string>
+    <string name="movies">Movies</string>
 </resources>
