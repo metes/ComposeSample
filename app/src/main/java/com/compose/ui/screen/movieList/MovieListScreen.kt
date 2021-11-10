@@ -31,20 +31,38 @@ import kotlinx.coroutines.flow.SharedFlow
 
 @Composable
 fun MovieListScreen(repository: MovieListRepo) {
+    Column {
+        MyToolbar()
+        ShowMovieListFromRepository(repository)
+    }
+    MakeInitialRequest(repository, rememberCoroutineScope())
+}
+
+@Composable
+fun MakeInitialRequest(repository: MovieListRepo, scope: CoroutineScope) {
+    LaunchedEffect(repository.currencyListFlow.replayCache.isEmpty()) {
+        repository.getCurrencyList(scope)
+    }
+}
+
+@Composable
+fun ShowMovieListFromRepository(repository: MovieListRepo) {
     val scope = rememberCoroutineScope()
 
     val currencyState by repository.currencyListFlow.collectAsState(
-        initial = ApiRequester.APIResult.Idle()
+        initial = ApiRequester.APIResult.Idle<MovieModel>()
     )
 
     when (currencyState) {
-        is ApiRequester.APIResult.Loading<*> -> {
+        is ApiRequester.APIResult.Loading<MovieModel> -> {
             ShowIndicator()
         }
-        is ApiRequester.APIResult.Success<*> -> {
-            val successModel = (currencyState as ApiRequester.APIResult.Success<*>)
-            ShowMovieList(
-                content = successModel.data.getOrNull() as MovieModel?,
+        is ApiRequester.APIResult.Success<MovieModel> -> {
+            val successModel = (currencyState as ApiRequester.APIResult.Success<MovieModel>)
+            val content = successModel.data.getOrNull()
+
+            MovieList(
+                movieList = content?.movieResults ?: emptyList(),
                 onRefresh = { repository.getCurrencyList(scope) },
                 moviesFlow = repository.currencyListFlow
             )
@@ -67,27 +85,6 @@ fun MovieListScreen(repository: MovieListRepo) {
                 buttons = { }
             )
         }
-    }
-
-    MakeInitialRequest(repository, scope)
-}
-
-@Composable
-fun MakeInitialRequest(repository: MovieListRepo, scope: CoroutineScope) {
-    LaunchedEffect(repository.currencyListFlow.replayCache.isEmpty()) {
-        repository.getCurrencyList(scope)
-    }
-}
-
-@Composable
-fun ShowMovieList(
-    content: MovieModel?,
-    onRefresh: () -> Unit,
-    moviesFlow: SharedFlow<ApiRequester.APIResult<MovieModel>>
-) {
-    Column {
-        MyToolbar()
-        MovieList(content?.movieResults ?: emptyList(), onRefresh, moviesFlow)
     }
 }
 
