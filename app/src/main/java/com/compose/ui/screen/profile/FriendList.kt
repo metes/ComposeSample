@@ -1,4 +1,4 @@
-package com.compose.ui.screen
+package com.compose.ui.screen.profile
 
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -12,7 +12,7 @@ fun ProfileScreen(navController: NavController) {
     Button(onClick = {
         // navController.navigate("friends")
     }) {
-        Text(text = "Navigate next friend")
+        Text(text = "Navigate test")
     }
     /*...*/
 }

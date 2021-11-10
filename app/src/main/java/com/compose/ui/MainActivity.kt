@@ -20,9 +20,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.compose.R
-import com.compose.ui.screen.ProfileScreen
 import com.compose.ui.screen.movieList.MovieListRepo
 import com.compose.ui.screen.movieList.MovieListScreen
+import com.compose.ui.screen.profile.ProfileScreen
 import com.compose.ui.theme.TopMoviesTheme
 import org.koin.android.ext.android.inject
 

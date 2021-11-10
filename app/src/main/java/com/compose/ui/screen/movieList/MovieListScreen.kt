@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.AlertDialog
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -23,6 +22,7 @@ import com.compose.network.model.movie.MovieModel
 import com.compose.network.model.movie.MovieResult
 import com.compose.network.requester.ApiRequester
 import com.compose.ui.screen.MyToolbar
+import com.compose.ui.screen.ShowAlertDialog
 import com.compose.ui.screen.ShowIndicator
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -31,45 +31,11 @@ import kotlinx.coroutines.flow.SharedFlow
 
 @Composable
 fun MovieListScreen(repository: MovieListRepo) {
-    val scope = rememberCoroutineScope()
-
-    val currencyState by repository.currencyListFlow.collectAsState(
-        initial = ApiRequester.APIResult.Idle()
-    )
-
-    when (currencyState) {
-        is ApiRequester.APIResult.Loading<*> -> {
-            ShowIndicator()
-        }
-        is ApiRequester.APIResult.Success<*> -> {
-            val successModel = (currencyState as ApiRequester.APIResult.Success<*>)
-            ShowMovieList(
-                content = successModel.data.getOrNull() as MovieModel?,
-                onRefresh = { repository.getCurrencyList(scope) },
-                moviesFlow = repository.currencyListFlow
-            )
-        }
-        is ApiRequester.APIResult.HTTPException -> {
-            AlertDialog(
-                onDismissRequest = { /*TODO*/ },
-                title = { Text("http exception") },
-                text = { Text("ttt") },
-                buttons = {
-
-                }
-            )
-        }
-        is ApiRequester.APIResult.GeneralException -> {
-            AlertDialog(
-                onDismissRequest = { /*TODO*/ },
-                title = { Text("general exception") },
-                text = { Text("ttt") },
-                buttons = { }
-            )
-        }
+    Column {
+        MyToolbar()
+        ShowMovieListFromRepository(repository)
     }
-
-    MakeInitialRequest(repository, scope)
+    MakeInitialRequest(repository, rememberCoroutineScope())
 }
 
 @Composable
@@ -80,14 +46,45 @@ fun MakeInitialRequest(repository: MovieListRepo, scope: CoroutineScope) {
 }
 
 @Composable
-fun ShowMovieList(
-    content: MovieModel?,
-    onRefresh: () -> Unit,
-    moviesFlow: SharedFlow<ApiRequester.APIResult<MovieModel>>
-) {
-    Column {
-        MyToolbar()
-        MovieList(content?.movieResults ?: emptyList(), onRefresh, moviesFlow)
+fun ShowMovieListFromRepository(repository: MovieListRepo) {
+    val scope = rememberCoroutineScope()
+
+    val currencyState by repository.currencyListFlow.collectAsState(
+        initial = ApiRequester.APIResult.Idle<MovieModel>()
+    )
+
+    when (currencyState) {
+        is ApiRequester.APIResult.Loading<MovieModel> -> {
+            ShowIndicator()
+        }
+        is ApiRequester.APIResult.Success<MovieModel> -> {
+            val successModel = (currencyState as ApiRequester.APIResult.Success<MovieModel>)
+            val content = successModel.data.getOrNull()
+
+            MovieList(
+                movieList = content?.movieResults ?: emptyList(),
+                onRefresh = { repository.getCurrencyList(scope) },
+                moviesFlow = repository.currencyListFlow
+            )
+        }
+        is ApiRequester.APIResult.HTTPException<MovieModel> -> {
+            val exceptionModel = (currencyState as ApiRequester.APIResult.HTTPException<*>)
+            val dialogState = remember { mutableStateOf(true) }
+            ShowAlertDialog(
+                title = "HTTPException",
+                text = exceptionModel.exception.message,
+                dialogState = dialogState
+            )
+        }
+        is ApiRequester.APIResult.GeneralException<MovieModel> -> {
+            val exceptionModel = (currencyState as ApiRequester.APIResult.GeneralException<*>)
+            val dialogState = remember { mutableStateOf(true) }
+            ShowAlertDialog(
+                title = "GeneralException",
+                text = exceptionModel.exception.message,
+                dialogState = dialogState
+            )
+        }
     }
 }
 
