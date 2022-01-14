@@ -2,7 +2,8 @@ package com.compose.di
 
 import com.compose.network.client.APIClient
 import com.compose.network.requester.ApiRequester
-import com.compose.ui.screen.movieList.MovieListRepo
+import com.compose.ui.screens.movieList.MovieListViewModel
+import com.compose.ui.screens.movieList.useCase.FetchMoviesUseCase
 import com.google.gson.Gson
 import org.koin.dsl.module
 
@@ -12,6 +13,8 @@ object KoinModule {
         single { Gson() }
         single { APIClient() }
         single { ApiRequester() }
-        single { MovieListRepo() }
+        single { MovieListViewModel() }
+
+        factory { FetchMoviesUseCase() }
     }
 }

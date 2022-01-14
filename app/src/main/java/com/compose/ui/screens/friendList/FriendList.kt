@@ -1,4 +1,4 @@
-package com.compose.ui.screen
+package com.compose.ui.screens.friendList
 
 import androidx.compose.material.Button
 import androidx.compose.material.Text

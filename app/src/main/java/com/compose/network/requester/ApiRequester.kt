@@ -10,28 +10,34 @@ class ApiRequester: KoinComponent {
 
     private val client by inject<APIClient>()
 
+    /**
+     * @param sharedFlow Where current request status is kept.
+     * @param requestFunc Suspend function used for API send request.
+     */
     suspend fun <T>sendRequest(
-        sharedFlow: MutableSharedFlow<APIResult<T>>,
+        sharedFlow: MutableSharedFlow<APIResultStatus<T>>,
         requestFunc: suspend (apiClient: APIClient) -> T
     ) {
-        sharedFlow.emit(APIResult.Loading())
+        sharedFlow.emit(APIResultStatus.Loading())
         try {
-            sharedFlow.emit(APIResult.Success(Result.success(requestFunc(client))))
+            sharedFlow.emit(APIResultStatus.Success(Result.success(requestFunc(client))))
         } catch (httpException: HttpException) {
             httpException.printStackTrace()
-            sharedFlow.emit(APIResult.HTTPException(httpException))
+            sharedFlow.emit(APIResultStatus.HTTPException(httpException))
         } catch (e: Exception) {
             e.printStackTrace()
-            sharedFlow.emit(APIResult.GeneralException(e))
+            sharedFlow.emit(APIResultStatus.GeneralException(e))
         }
     }
+}
 
-    sealed class APIResult<T> {
-        class Idle<T> : APIResult<T>()
-        class Loading<T> : APIResult<T>()
-        data class HTTPException<T>(val exception: HttpException) : APIResult<T>()
-        data class GeneralException<T>(val exception: Exception) : APIResult<T>()
-        data class Success<T>(val data: Result<T>) : APIResult<T>()
-    }
-
+/**
+ *
+ */
+sealed class APIResultStatus<T> {
+    class Idle<T> : APIResultStatus<T>()
+    class Loading<T> : APIResultStatus<T>()
+    data class HTTPException<T>(val exception: HttpException) : APIResultStatus<T>()
+    data class GeneralException<T>(val exception: Exception) : APIResultStatus<T>()
+    data class Success<T>(val data: Result<T>) : APIResultStatus<T>()
 }
