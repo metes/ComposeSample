@@ -2,8 +2,7 @@ package com.compose.ui.screens.movieList
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.compose.network.model.movie.MovieModel
-import com.compose.network.model.movie.MovieResult
+import com.compose.network.model.response.movie.popular.PopularMoviesResponse
 import com.compose.network.requester.APIResultStatus
 import com.compose.ui.screens.movieList.useCase.FetchMoviesUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +18,7 @@ class MovieListViewModel: ViewModel(), KoinComponent {
     private val _movieListUiState = MutableStateFlow<UiState>(UiState.Idle)
     val movieListUiState = _movieListUiState.asStateFlow()
 
-    var movieResult: List<MovieItemUiStateData> = emptyList()
+    var movieResult: List<PopularMoviesResponse.Result> = emptyList()
 
     init {
         getMovieList()
@@ -31,7 +30,10 @@ class MovieListViewModel: ViewModel(), KoinComponent {
         }
     }
 
-    private fun handleApiResult(apiResultStatus: APIResultStatus<MovieModel>, isRefresh: Boolean) {
+    private fun handleApiResult(
+        apiResultStatus: APIResultStatus<PopularMoviesResponse>,
+        isRefresh: Boolean
+    ) {
         viewModelScope.launch {
             when (apiResultStatus) {
                 is APIResultStatus.Idle -> {
@@ -45,13 +47,12 @@ class MovieListViewModel: ViewModel(), KoinComponent {
                     }
                     _movieListUiState.emit(state)
                 }
-                is APIResultStatus.Success<MovieModel> -> {
+                is APIResultStatus.Success<PopularMoviesResponse> -> {
                     if (isRefresh) {
                         _movieListUiState.emit(UiState.ListRefreshing(false))
                     }
 
-                    val data = apiResultStatus.data.getOrNull()
-                    movieResult = data?.movieResults.convertToMovieItemUiState()
+                    movieResult = apiResultStatus.data.getOrNull()?.results.orEmpty()
 
 
                     _movieListUiState.emit(UiState.MovieListScreenUiState())
@@ -67,18 +68,18 @@ class MovieListViewModel: ViewModel(), KoinComponent {
         }
     }
 
-    private fun List<MovieResult>?.convertToMovieItemUiState(): List<MovieItemUiStateData> {
-        val returnList = ArrayList<MovieItemUiStateData>()
-        this?.forEach {
-            returnList.add(
-                MovieItemUiStateData(
-                    imdbId = it.imdbId,
-                    title = it.title,
-                    year = it.year
-                )
-            )
-        }
-        return returnList
-    }
+//    private fun List<MovieResult>?.convertToMovieItemUiState(): List<MovieItemUiStateData> {
+//        val returnList = ArrayList<MovieItemUiStateData>()
+//        this?.forEach {
+//            returnList.add(
+//                MovieItemUiStateData(
+//                    imdbId = it.imdbId,
+//                    title = it.title,
+//                    year = it.year
+//                )
+//            )
+//        }
+//        return returnList
+//    }
 
 }

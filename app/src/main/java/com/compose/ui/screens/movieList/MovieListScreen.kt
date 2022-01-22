@@ -1,6 +1,7 @@
 package com.compose.ui.screens.movieList
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,14 +14,20 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
+import com.compose.BuildConfig
 import com.compose.R
-import com.compose.tools.color
+import com.compose.network.model.response.movie.popular.PopularMoviesResponse
+import com.compose.ui.screens.MyRatingBar
 import com.compose.ui.screens.MyToolbar
 import com.compose.ui.screens.ShowIndicator
 import com.google.accompanist.swiperefresh.SwipeRefresh
@@ -62,7 +69,9 @@ fun ActionByUIState(
                 onDismissRequest = { /* Do Nothing */ },
                 title = { Text(context.getString(R.string.general_error)) },
                 text = { Text(uiState.exception?.message.orEmpty()) }, // todo show meaningful message
-                buttons = { }
+                buttons = {
+                    // todo add retry & exit buttons
+                }
             )
         }
     }
@@ -70,7 +79,7 @@ fun ActionByUIState(
 
 @Composable
 fun ShowMovieList(
-    content: List<MovieItemUiStateData>?,
+    content: List<PopularMoviesResponse.Result>,
     onRefresh: () -> Unit,
     isRefreshing: Boolean
 ) {
@@ -83,7 +92,7 @@ fun ShowMovieList(
 
 @Composable
 fun MovieList(
-    movieList: List<MovieItemUiStateData>,
+    movieList: List<PopularMoviesResponse.Result>,
     onRefresh: () -> Unit,
     isRefreshing: Boolean
 ) {
@@ -103,9 +112,14 @@ fun MovieList(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
+@ExperimentalCoilApi
 @Composable
-fun MovieListItem(item: MovieItemUiStateData) {
-    val cardBgColor = "#E8EAF6".color // todo update
+fun MovieListItem(item: PopularMoviesResponse.Result) {
+    val cardBgColor = colorResource(id = R.color.material_blue_grey_50)
+    val imageSize = "w300"
+    val imageUrl = BuildConfig.BASE_URL_IMG + imageSize + item.posterPath
+    Log.d("imageUrl-", imageUrl)
     Card(
         shape = MaterialTheme.shapes.medium,
         elevation = 4.dp,
@@ -122,20 +136,25 @@ fun MovieListItem(item: MovieItemUiStateData) {
                     .padding(8.dp)
                     .clip(CircleShape)
                     .background(Color.Blue),
-                painter = painterResource(R.drawable.ic_imdb_logo_2016),
-                contentDescription = "Contact profile picture", // todo reference to xml
+                contentScale = ContentScale.FillWidth,
+                painter =
+                    rememberImagePainter(imageUrl),
+                contentDescription = item.title
             )
             Column(
                 modifier = Modifier
-                    //.height(64.dp)
                     .padding(8.dp)
                     .align(Alignment.CenterVertically)
             ) {
                 Text(
-                    text = item.title
+                    text = item.title.orEmpty()
+                )
+                MyRatingBar(
+                    modifier = Modifier.width(16.dp),
+                    rating = item.voteAverage ?: 1.0
                 )
                 Text(
-                    text = "${item.year}",
+                    text = "${item.releaseDate}",
                     fontStyle = FontStyle.Italic
                 )
             }

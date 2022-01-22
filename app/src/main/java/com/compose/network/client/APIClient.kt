@@ -44,7 +44,7 @@ class APIClient : KoinComponent {
 
     private val retrofitBuilder by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL_API)
             .addConverterFactory(GsonConverterFactory.create(GsonBuilder().create()))
     }
 
@@ -59,8 +59,5 @@ class APIClient : KoinComponent {
     }
 
 
-    companion object {
-        private const val BASE_URL = "https://www.mockachino.com/66229e66-ac67-41/"
-    }
 }
 
