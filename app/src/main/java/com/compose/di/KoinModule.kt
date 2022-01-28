@@ -1,5 +1,7 @@
 package com.compose.di
 
+import com.compose.MyApplication
+import com.compose.db.database.MovieDB
 import com.compose.network.client.APIClient
 import com.compose.network.requester.ApiRequester
 import com.compose.ui.screens.movieList.MovieListViewModel
@@ -16,5 +18,8 @@ object KoinModule {
         single { MovieListViewModel() }
 
         factory { FetchMoviesUseCase() }
+
+        single { MyApplication() }
+        single { MovieDB(context = get()).movieDao() }
     }
 }

@@ -12,7 +12,8 @@ import androidx.compose.material.AlertDialog
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -26,7 +27,7 @@ import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.compose.BuildConfig
 import com.compose.R
-import com.compose.network.model.response.movie.popular.PopularMoviesResponse
+import com.compose.db.entity.MovieEntity
 import com.compose.ui.screens.MyRatingBar
 import com.compose.ui.screens.MyToolbar
 import com.compose.ui.screens.ShowIndicator
@@ -43,7 +44,7 @@ fun ActionByUIState(
     context: Context,
     viewModel: MovieListViewModel
 ) {
-    when (val uiState = viewModel.movieListUiState.value) {
+    when (val uiState = viewModel.uiState.collectAsState(UiState.Idle).value) {
         is UiState.Idle -> {
             /* Do Nothing */
         }
@@ -55,10 +56,15 @@ fun ActionByUIState(
         }
         is UiState.ListRefreshing,
         is UiState.MovieListScreenUiState -> {
+            val movieList = if (uiState is UiState.MovieListScreenUiState) {
+                uiState.movieList
+            } else {
+                emptyList()
+            }
             Column {
                 MyToolbar()
                 ShowMovieList(
-                    content = viewModel.movieResult,
+                    content = movieList,
                     onRefresh = { viewModel.getMovieList(true) },
                     isRefreshing = uiState is UiState.ListRefreshing
                 )
@@ -79,20 +85,20 @@ fun ActionByUIState(
 
 @Composable
 fun ShowMovieList(
-    content: List<PopularMoviesResponse.Result>,
+    content: List<MovieEntity>,
     onRefresh: () -> Unit,
     isRefreshing: Boolean
 ) {
     MovieList(
         onRefresh = onRefresh,
         isRefreshing = isRefreshing,
-        movieList = content ?: emptyList(),
+        movieList = content,
     )
 }
 
 @Composable
 fun MovieList(
-    movieList: List<PopularMoviesResponse.Result>,
+    movieList: List<MovieEntity>,
     onRefresh: () -> Unit,
     isRefreshing: Boolean
 ) {
@@ -115,7 +121,7 @@ fun MovieList(
 @OptIn(ExperimentalComposeUiApi::class)
 @ExperimentalCoilApi
 @Composable
-fun MovieListItem(item: PopularMoviesResponse.Result) {
+fun MovieListItem(item: MovieEntity) {
     val cardBgColor = colorResource(id = R.color.material_blue_grey_50)
     val imageSize = "w300"
     val imageUrl = BuildConfig.BASE_URL_IMG + imageSize + item.posterPath
@@ -147,11 +153,11 @@ fun MovieListItem(item: PopularMoviesResponse.Result) {
                     .align(Alignment.CenterVertically)
             ) {
                 Text(
-                    text = item.title.orEmpty()
+                    text = item.title
                 )
                 MyRatingBar(
                     modifier = Modifier.width(16.dp),
-                    rating = item.voteAverage ?: 1.0
+                    rating = item.voteAverage.toDouble()
                 )
                 Text(
                     text = "${item.releaseDate}",

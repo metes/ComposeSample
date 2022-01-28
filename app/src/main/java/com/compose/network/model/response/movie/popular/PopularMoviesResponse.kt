@@ -40,7 +40,7 @@ class PopularMoviesResponse(
         @SerializedName("video")
         val video: Boolean? = false, // false
         @SerializedName("vote_average")
-        val voteAverage: Double? = 0.0, // 7.3
+        val voteAverage: Float? = 0.0f, // 7.3
         @SerializedName("vote_count")
         val voteCount: Int? = 0 // 3218
     )

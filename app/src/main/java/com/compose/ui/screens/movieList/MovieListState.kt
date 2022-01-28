@@ -1,5 +1,7 @@
 package com.compose.ui.screens.movieList
 
+import com.compose.db.entity.MovieEntity
+
 data class MovieItemUiStateData(
     val imdbId: String,
     val title: String,
@@ -14,6 +16,7 @@ sealed class UiState {
     data class ListRefreshing(val isRefreshing: Boolean) : UiState()
     data class GeneralException(val exception: Exception?) : UiState()
     data class MovieListScreenUiState(
-        val isSignedIn: Boolean = false
+        val isSignedIn: Boolean = false,
+        var movieList: List<MovieEntity> = emptyList()
     ) : UiState()
 }

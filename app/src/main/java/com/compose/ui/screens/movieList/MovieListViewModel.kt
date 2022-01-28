@@ -5,64 +5,61 @@ import androidx.lifecycle.viewModelScope
 import com.compose.network.model.response.movie.popular.PopularMoviesResponse
 import com.compose.network.requester.APIResultStatus
 import com.compose.ui.screens.movieList.useCase.FetchMoviesUseCase
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-class MovieListViewModel: ViewModel(), KoinComponent {
+class MovieListViewModel : ViewModel(), KoinComponent {
 
-    private val fetchMoviesUseCase by inject<FetchMoviesUseCase>()
+    private val moviesUseCase by inject<FetchMoviesUseCase>()
 
-    private val _movieListUiState = MutableStateFlow<UiState>(UiState.Idle)
-    val movieListUiState = _movieListUiState.asStateFlow()
-
-    var movieResult: List<PopularMoviesResponse.Result> = emptyList()
+    private val _uiState = MutableSharedFlow<UiState>()
+    val uiState = _uiState.asSharedFlow()
 
     init {
         getMovieList()
     }
 
     fun getMovieList(isRefresh: Boolean = false) {
-        fetchMoviesUseCase.fetchMovies(viewModelScope) {
-            handleApiResult(it, isRefresh)
+        viewModelScope.launch(Dispatchers.IO) {
+            moviesUseCase.fetchMovies(::handleNotSuccessResults, isRefresh).collect { movieList ->
+                if (isRefresh) {
+                    _uiState.emit(UiState.ListRefreshing(false))
+                }
+
+                _uiState.emit(UiState.MovieListScreenUiState(movieList = movieList))
+            }
         }
     }
 
-    private fun handleApiResult(
+    private fun handleNotSuccessResults(
         apiResultStatus: APIResultStatus<PopularMoviesResponse>,
         isRefresh: Boolean
     ) {
         viewModelScope.launch {
             when (apiResultStatus) {
-                is APIResultStatus.Idle -> {
-                    _movieListUiState.emit(UiState.Idle)
-                }
+                is APIResultStatus.Idle -> _uiState.emit(UiState.Idle)
                 is APIResultStatus.Loading -> {
                     val state = if (isRefresh) {
                         UiState.ListRefreshing(true)
                     } else {
                         UiState.Loading
                     }
-                    _movieListUiState.emit(state)
-                }
-                is APIResultStatus.Success<PopularMoviesResponse> -> {
-                    if (isRefresh) {
-                        _movieListUiState.emit(UiState.ListRefreshing(false))
-                    }
-
-                    movieResult = apiResultStatus.data.getOrNull()?.results.orEmpty()
-
-
-                    _movieListUiState.emit(UiState.MovieListScreenUiState())
+                    _uiState.emit(state)
                 }
                 is APIResultStatus.GeneralException -> {
                     if (isRefresh) {
-                        _movieListUiState.emit(UiState.ListRefreshing(false))
+                        _uiState.emit(UiState.ListRefreshing(false))
                     }
 
-                    _movieListUiState.emit(UiState.GeneralException(apiResultStatus.exception))
+                    _uiState.emit(UiState.GeneralException(apiResultStatus.exception))
+                }
+                else -> {
+                    /** Dont anything */
                 }
             }
         }
