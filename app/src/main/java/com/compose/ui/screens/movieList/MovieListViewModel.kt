@@ -6,9 +6,7 @@ import com.compose.network.model.response.movie.popular.PopularMoviesResponse
 import com.compose.network.requester.APIResultStatus
 import com.compose.ui.screens.movieList.useCase.FetchMoviesUseCase
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -17,8 +15,8 @@ class MovieListViewModel : ViewModel(), KoinComponent {
 
     private val moviesUseCase by inject<FetchMoviesUseCase>()
 
-    private val _uiState = MutableSharedFlow<UiState>()
-    val uiState = _uiState.asSharedFlow()
+    private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
+    val uiState = _uiState.asStateFlow()
 
     init {
         getMovieList()
