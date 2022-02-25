@@ -12,5 +12,6 @@ data class MovieEntity(
     @ColumnInfo(name = "original_title") val originalTitle: String,
     @ColumnInfo(name = "vote_average") val voteAverage: Float,
     @ColumnInfo(name = "genre_ids") val genreIds: String,
-    @ColumnInfo(name = "poster_path") val posterPath: String
+    @ColumnInfo(name = "poster_path") val posterPath: String,
+    @ColumnInfo(name = "list_type") val listType: String
 )

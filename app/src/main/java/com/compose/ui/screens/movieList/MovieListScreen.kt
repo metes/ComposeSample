@@ -37,16 +37,14 @@ import com.compose.ui.screens.MyToolbar
 import com.compose.ui.screens.ShowIndicator
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import kotlinx.coroutines.flow.collect
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun MovieListScreen(viewModel: MovieListViewModel, context: Context) {
     ActionByUIState(context, viewModel)
-
-    CustomDialog(openDialogCustom = mutableStateOf(true))
 }
 
+@ExperimentalCoilApi
 @Composable
 fun ActionByUIState(
     context: Context,
@@ -54,48 +52,55 @@ fun ActionByUIState(
 ) {
     val collectedUIState by viewModel.uiState.collectAsState()
 
-    when (val uiState = collectedUIState) {
-        is UiState.Idle -> {
-            /* Do Nothing */
-        }
-        is UiState.Loading -> {
-            Column {
-                MyToolbar()
+    Column {
+        MyToolbar()
+        DropDownList(viewModel)
+
+        when (val uiState = collectedUIState) {
+            is UiState.Idle -> {
+                /* Do Nothing */
+            }
+            is UiState.Loading -> {
                 ShowIndicator()
             }
-        }
-        is UiState.ListRefreshing,
-        is UiState.MovieListScreenUiState -> {
-            val movieList = if (uiState is UiState.MovieListScreenUiState) {
-                uiState.movieList
-            } else {
-                emptyList()
-            }
-            Column {
-                MyToolbar()
-                DropDownList(
-
-                )
+            is UiState.ListRefreshing,
+            is UiState.MovieListScreenUiState -> {
+                val movieList = if (uiState is UiState.MovieListScreenUiState) {
+                    uiState.movieList
+                } else {
+                    emptyList()
+                }
                 ShowMovieList(
                     movieList = movieList,
                     onRefresh = { viewModel.getMovieList(true) },
                     isRefreshing = uiState is UiState.ListRefreshing
                 )
             }
-        }
-        is UiState.GeneralException -> {
-            AlertDialog(
-                onDismissRequest = { /* Do Nothing */ },
-                title = { Text(context.getString(R.string.general_error)) },
-                text = { Text(uiState.exception?.message.orEmpty()) }, // todo show meaningful message
-                buttons = {
-                    // todo add retry & exit buttons
-                }
-            )
+            is UiState.GeneralException -> {
+                AlertDialog(
+                    onDismissRequest = { /* Do Nothing */ },
+                    title = { Text(context.getString(R.string.general_error)) },
+                    text = { Text(uiState.exception?.message.orEmpty()) }, // todo show meaningful message
+                    buttons = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(
+                                modifier = Modifier.padding(8.dp),
+                                onClick = { viewModel.getMovieList() }
+                            ) {
+                                Text(context.getString(R.string._cancel))
+                            }
+                        }
+                    }
+                )
+            }
         }
     }
 }
 
+@ExperimentalCoilApi
 @Composable
 fun ShowMovieList(
     movieList: List<MovieEntity>,
@@ -103,7 +108,7 @@ fun ShowMovieList(
     isRefreshing: Boolean
 ) {
     SwipeRefresh(
-        state =  rememberSwipeRefreshState(isRefreshing),
+        state = rememberSwipeRefreshState(isRefreshing),
         onRefresh = { onRefresh() }
     ) {
         LazyColumn(
@@ -122,6 +127,11 @@ fun ShowMovieList(
 @ExperimentalCoilApi
 @Composable
 fun MovieListItem(item: MovieEntity) {
+    val showDialog = remember { mutableStateOf(false) }
+    if (showDialog.value) {
+        CustomDialog(openDialogCustom = showDialog)
+    }
+
     val cardBgColor = colorResource(id = R.color.material_blue_grey_50)
     val imageSize = "w300"
     val imageUrl = BuildConfig.BASE_URL_IMG + imageSize + item.posterPath
@@ -130,11 +140,11 @@ fun MovieListItem(item: MovieEntity) {
         shape = MaterialTheme.shapes.medium,
         elevation = 4.dp,
         onClick = {
-
+            showDialog.value = true
         },
         modifier = Modifier
             .padding(24.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.background(cardBgColor)
@@ -147,7 +157,7 @@ fun MovieListItem(item: MovieEntity) {
                     .background(Color.Blue),
                 contentScale = ContentScale.FillWidth,
                 painter =
-                    rememberImagePainter(imageUrl),
+                rememberImagePainter(imageUrl),
                 contentDescription = item.title
             )
             Column(
@@ -172,11 +182,10 @@ fun MovieListItem(item: MovieEntity) {
 }
 
 @Composable
-fun DropDownList(
-) {
+fun DropDownList(viewModel: MovieListViewModel) {
     var expanded by remember { mutableStateOf(false) }
-    val suggestions = listOf("Item1","Item2","Item3")
-    var selectedText by remember { mutableStateOf("") }
+    val listTypeNames = ListType.values().map { it.name }
+    var selectedText by remember { mutableStateOf(listTypeNames.first()) }
 
     var dropDownWidth by remember { mutableStateOf(0) }
 
@@ -186,8 +195,11 @@ fun DropDownList(
         Icons.Filled.ArrowDropDown
     }
 
-
-    Column {
+    Column(
+        modifier = Modifier.clickable {
+            expanded = true
+        }
+    ) {
         OutlinedTextField(
             enabled = false,
             value = selectedText,
@@ -195,10 +207,8 @@ fun DropDownList(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth()
-                .onSizeChanged {
-                    dropDownWidth = it.width
-                },
-            label = { Text("Label") },
+                .onSizeChanged { dropDownWidth = it.width },
+            label = { ListType.valueOf(selectedText) },
             trailingIcon = {
                 Icon(icon, "contentDescription", Modifier.clickable { expanded = !expanded })
             }
@@ -206,11 +216,16 @@ fun DropDownList(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .width(with(LocalDensity.current) { dropDownWidth.toDp() })
+            modifier = Modifier.width(with(LocalDensity.current) { dropDownWidth.toDp() })
         ) {
-            suggestions.forEach { label ->
-                DropdownMenuItem(onClick = { selectedText = label }) {
+            listTypeNames.forEach { label ->
+                DropdownMenuItem(
+                    onClick = {
+                        selectedText = label
+                        viewModel.getMovieList(false, ListType.valueOf(label))
+                        expanded = false
+                    }
+                ) {
                     Text(text = label)
                 }
             }

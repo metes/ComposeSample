@@ -6,10 +6,16 @@ import com.compose.network.model.response.movie.popular.PopularMoviesResponse
 import com.compose.network.requester.APIResultStatus
 import com.compose.ui.screens.movieList.useCase.FetchMoviesUseCase
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+
+enum class ListType {
+    Popular, TopRated, Upcoming
+}
 
 class MovieListViewModel : ViewModel(), KoinComponent {
 
@@ -22,15 +28,15 @@ class MovieListViewModel : ViewModel(), KoinComponent {
         getMovieList()
     }
 
-    fun getMovieList(isRefresh: Boolean = false) {
+    fun getMovieList(isRefresh: Boolean = false, listType: ListType = ListType.Popular) {
         viewModelScope.launch(Dispatchers.IO) {
-            moviesUseCase.fetchMovies(::handleNotSuccessResults, isRefresh).collect { movieList ->
-                if (isRefresh) {
-                    _uiState.emit(UiState.ListRefreshing(false))
+            moviesUseCase.fetchMovieListByType(::handleNotSuccessResults, isRefresh, listType)
+                .collect { movieList ->
+                    if (isRefresh) {
+                        _uiState.emit(UiState.ListRefreshing(false))
+                    }
+                    _uiState.emit(UiState.MovieListScreenUiState(movieList = movieList))
                 }
-
-                _uiState.emit(UiState.MovieListScreenUiState(movieList = movieList))
-            }
         }
     }
 

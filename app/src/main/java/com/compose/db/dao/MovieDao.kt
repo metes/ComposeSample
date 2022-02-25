@@ -9,14 +9,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MovieDao {
-    @Query("SELECT * FROM MovieEntity")
-    fun getAll(): Flow<List<MovieEntity>>
+    @Query("SELECT * FROM MovieEntity WHERE list_type LIKE :listType")
+    fun getAll(listType: String): Flow<List<MovieEntity>>
 
-    @Query("SELECT * FROM movieentity WHERE id IN (:ids)")
-    fun loadAllByIds(ids: IntArray): Flow<List<MovieEntity>>
+    @Query("SELECT * FROM movieentity WHERE id IN (:ids) AND list_type LIKE :listType")
+    fun loadAllByIds(listType: String, ids: IntArray): Flow<List<MovieEntity>>
 
-    @Query("SELECT * FROM movieentity WHERE title LIKE :title")
-    fun findByName(title: String): Flow<List<MovieEntity>>
+    @Query("SELECT * FROM movieentity WHERE title LIKE :title AND list_type LIKE :listType")
+    fun findByName(listType: String, title: String): Flow<List<MovieEntity>>
 
     @Insert
     fun insertAll(users: List<MovieEntity>)
@@ -30,6 +30,6 @@ interface MovieDao {
     @Delete
     fun delete(user: MovieEntity)
 
-    @Query("DELETE FROM movieentity")
-    fun nukeTable()
+    @Query("DELETE FROM movieentity WHERE list_type LIKE :listType")
+    fun nukeTable(listType: String)
 }

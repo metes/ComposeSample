@@ -32,6 +32,8 @@ android {
         buildConfigField "String", "MOVIE_API_KEY", "${properties.getProperty('MOVIE_API_KEY')}"
         buildConfigField "String", "BASE_URL_API", "\"https://api.themoviedb.org/\""
         buildConfigField "String", "BASE_URL_IMG", "\"https://image.tmdb.org/t/p/\""
+        buildConfigField "String", "LANGUAGE", "\"en-US/\""
+        buildConfigField "String", "PAGE_1", "\"1\""
     }
 
     buildTypes {

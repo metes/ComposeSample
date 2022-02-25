@@ -22,25 +22,25 @@ class APIClient : KoinComponent {
         hashMapOf("Content-Type" to "application/json")
     }
 
-    val retrofitClient: RestClient
-        get() {
-            return retrofitBuilder
-                .client(generateOkHttpClient())
-                .build()
-                .create(RestClient::class.java)
-        }
-
-    private fun generateOkHttpClient(): OkHttpClient {
-        okHttpClientBuilder.addInterceptor { chain ->
-            val builder = chain.request().newBuilder()
-            headerMap.forEach {
-                builder.removeHeader(it.key)
-                builder.addHeader(it.key, it.value)
-            }
-            chain.proceed(builder.build())
-        }
-        return okHttpClientBuilder.build()
+    val retrofitClient: RestClient by lazy {
+        retrofitBuilder
+            .client(okHttpClient)
+            .build()
+            .create(RestClient::class.java)
     }
+
+    private val okHttpClient: OkHttpClient
+        get() {
+            okHttpClientBuilder.addInterceptor { chain ->
+                val builder = chain.request().newBuilder()
+                headerMap.forEach {
+                    builder.removeHeader(it.key)
+                    builder.addHeader(it.key, it.value)
+                }
+                chain.proceed(builder.build())
+            }
+            return okHttpClientBuilder.build()
+        }
 
     private val retrofitBuilder by lazy {
         Retrofit.Builder()

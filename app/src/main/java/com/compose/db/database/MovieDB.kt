@@ -7,15 +7,14 @@ import androidx.room.RoomDatabase
 import com.compose.db.dao.MovieDao
 import com.compose.db.entity.MovieEntity
 
-@Database(entities = [MovieEntity::class], version = 1)
-//@TypeConverters(Converters::class)
+@Database(entities = [MovieEntity::class], version = 2)
 abstract class MovieDB : RoomDatabase() {
 
     abstract fun movieDao(): MovieDao
 
     companion object {
 
-        const val dbName = "movieDB"
+        private const val dbName = "movieDB"
 
         @Volatile
         private var instance: MovieDB? = null
