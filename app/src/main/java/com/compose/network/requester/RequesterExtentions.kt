@@ -3,7 +3,7 @@ package com.compose.network.requester
 import retrofit2.HttpException
 
 
-fun <T> APIResultStatus<T>.onSuccess(action: (response: T?) -> Unit): APIResultStatus<T> {
+suspend fun <T> APIResultStatus<T>.onSuccess(action: suspend (response: T?) -> Unit): APIResultStatus<T> {
     if (this is APIResultStatus.Success) {
         action(this.data.getOrNull())
     }

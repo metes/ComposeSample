@@ -2,10 +2,15 @@ package com.compose.ui.screens.movieList
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import com.compose.db.entity.MovieEntity
 import com.compose.network.model.response.movie.popular.PopularMoviesResponse
 import com.compose.network.requester.APIResultStatus
 import com.compose.ui.screens.movieList.useCase.FetchMoviesUseCase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
@@ -24,41 +29,49 @@ class MovieListViewModel : ViewModel(), KoinComponent {
     private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
     val uiState = _uiState.asStateFlow()
 
+    var currentListType: ListType? = null
+    var pagingData: Flow<PagingData<MovieEntity>>? = null
+
     init {
-        getMovieList()
+        getMovieList(ListType.Popular)
     }
 
-    fun getMovieList(isRefresh: Boolean = false, listType: ListType = ListType.Popular) {
+    fun getMovieList(listType: ListType) {
         viewModelScope.launch(Dispatchers.IO) {
-            moviesUseCase.fetchMovieListByType(::handleNotSuccessResults, isRefresh, listType)
-                .collect { movieList ->
-                    if (isRefresh) {
-                        _uiState.emit(UiState.ListRefreshing(false))
-                    }
-                    _uiState.emit(UiState.MovieListScreenUiState(movieList = movieList))
-                }
+            _uiState.emit(UiState.ListRefreshing(false))
+
+            pagingData?.let {
+                _uiState.emit(UiState.MovieListScreenUiState(movieList = it))
+            }
         }
+
+        val movieSource = MoviePagingSource(::handleNotSuccessResults, moviesUseCase, listType)
+        pagingData = Pager(
+            config = PagingConfig(pageSize = 10, enablePlaceholders = false),
+            pagingSourceFactory = { movieSource }
+
+        ).flow
+
     }
 
     private fun handleNotSuccessResults(
-        apiResultStatus: APIResultStatus<PopularMoviesResponse>,
-        isRefresh: Boolean
+        apiResultStatus: APIResultStatus<PopularMoviesResponse>
     ) {
         viewModelScope.launch {
             when (apiResultStatus) {
                 is APIResultStatus.Idle -> _uiState.emit(UiState.Idle)
                 is APIResultStatus.Loading -> {
-                    val state = if (isRefresh) {
-                        UiState.ListRefreshing(true)
-                    } else {
-                        UiState.Loading
-                    }
-                    _uiState.emit(state)
+//                    val state = if (isRefresh) {
+//                        UiState.ListRefreshing(true)
+//                    } else {
+//                        UiState.Loading
+//                    }
+//                    _uiState.emit(state)
                 }
                 is APIResultStatus.GeneralException -> {
-                    if (isRefresh) {
-                        _uiState.emit(UiState.ListRefreshing(false))
-                    }
+//                    if (isRefresh) {
+//                        _uiState.emit(UiState.ListRefreshing(false))
+//                    }
 
                     _uiState.emit(UiState.GeneralException(apiResultStatus.exception))
                 }

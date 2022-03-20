@@ -10,26 +10,29 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MovieDao {
     @Query("SELECT * FROM MovieEntity WHERE list_type LIKE :listType")
-    fun getAll(listType: String): Flow<List<MovieEntity>>
+    suspend fun getAll(listType: String): List<MovieEntity>
+
+    @Query("SELECT * FROM MovieEntity WHERE list_type LIKE :listType AND page LIKE :page")
+    suspend fun getPage(listType: String, page: Int): List<MovieEntity>
 
     @Query("SELECT * FROM movieentity WHERE id IN (:ids) AND list_type LIKE :listType")
-    fun loadAllByIds(listType: String, ids: IntArray): Flow<List<MovieEntity>>
+    suspend fun loadAllByIds(listType: String, ids: IntArray): List<MovieEntity>
 
     @Query("SELECT * FROM movieentity WHERE title LIKE :title AND list_type LIKE :listType")
-    fun findByName(listType: String, title: String): Flow<List<MovieEntity>>
+    suspend fun findByName(listType: String, title: String): List<MovieEntity>
 
     @Insert
-    fun insertAll(users: List<MovieEntity>)
+    suspend fun insertAll(users: List<MovieEntity>)
 
     @Insert
-    fun insert(users: MovieEntity)
+    suspend fun insert(users: MovieEntity)
 
     @Delete
-    fun deleteAll(user: List<MovieEntity>)
+    suspend fun deleteAll(user: List<MovieEntity>)
 
     @Delete
-    fun delete(user: MovieEntity)
+    suspend fun delete(user: MovieEntity)
 
     @Query("DELETE FROM movieentity WHERE list_type LIKE :listType")
-    fun nukeTable(listType: String)
+    suspend fun nukeTable(listType: String)
 }

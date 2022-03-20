@@ -16,90 +16,95 @@ class FetchMoviesUseCase : KoinComponent {
     private val movieDao by inject<MovieDao>()
 
     suspend fun fetchMovieListByType(
-        resultStatus: (APIResultStatus<PopularMoviesResponse>, Boolean) -> Unit,
-        isRefresh: Boolean,
-        listType: ListType
-    ): Flow<List<MovieEntity>> {
+        resultStatus: (APIResultStatus<PopularMoviesResponse>) -> Unit,
+      
+        listType: ListType,
+        page: Int
+    ): List<MovieEntity> {
         return when (listType) {
-            ListType.Popular -> fetchPopularMovies(resultStatus, isRefresh, listType.name)
-            ListType.TopRated -> fetchTopRatedMovies(resultStatus, isRefresh, listType.name)
-            ListType.Upcoming -> fetchUpcomingMovies(resultStatus, isRefresh, listType.name)
+            ListType.Popular -> fetchPopularMovies(resultStatus, listType.name, page)
+            ListType.TopRated -> fetchTopRatedMovies(resultStatus, listType.name, page)
+            ListType.Upcoming -> fetchUpcomingMovies(resultStatus, listType.name, page)
         }
     }
 
     private suspend fun fetchPopularMovies(
-        resultStatus: (APIResultStatus<PopularMoviesResponse>, Boolean) -> Unit,
-        isRefresh: Boolean,
-        listTypeName: String
-    ): Flow<List<MovieEntity>> {
+        resultStatus: (APIResultStatus<PopularMoviesResponse>) -> Unit,
+        listTypeName: String,
+        page: Int,
+    ): List<MovieEntity> {
+        val pageDataFromDB = movieDao.getPage(listTypeName, page)
+        if (pageDataFromDB.isNullOrEmpty().not()) {
+            return pageDataFromDB
+        }
 
-        apiRequester.sendRequest({ retrofitClient.getPopularMovies() }, {
+        apiRequester.sendRequest({ retrofitClient.getPopularMovies(page = page) }, {
             it.onSuccess { response ->
                 val entityList = response?.toMovieEntities(listTypeName).orEmpty()
 
-                movieDao.nukeTable(listTypeName)
+//                movieDao.nukeTable(listTypeName)
+
                 movieDao.insertAll(entityList)
             }.onIdle {
-                resultStatus(APIResultStatus.Idle(), isRefresh)
+                resultStatus(APIResultStatus.Idle())
             }.onLoading {
-                resultStatus(APIResultStatus.Loading(), isRefresh)
+                resultStatus(APIResultStatus.Loading())
             }.onGeneralException { exception ->
-                resultStatus(APIResultStatus.GeneralException(exception), isRefresh)
+                resultStatus(APIResultStatus.GeneralException(exception))
             }.onHTTPException { exception ->
-                resultStatus(APIResultStatus.HTTPException(exception), isRefresh)
+                resultStatus(APIResultStatus.HTTPException(exception))
             }
         })
 
-        return movieDao.getAll(listTypeName)
+        return movieDao.getPage(listTypeName, page)
     }
 
     private suspend fun fetchTopRatedMovies(
-        resultStatus: (APIResultStatus<PopularMoviesResponse>, Boolean) -> Unit,
-        isRefresh: Boolean,
-        listTypeName: String
-    ): Flow<List<MovieEntity>> {
+        resultStatus: (APIResultStatus<PopularMoviesResponse>) -> Unit,
+        listTypeName: String,
+        page: Int
+    ): List<MovieEntity> {
 
-        apiRequester.sendRequest({ retrofitClient.getTopRatedMovies() }, {
+        apiRequester.sendRequest({ retrofitClient.getTopRatedMovies(page = page) }, {
             it.onSuccess { response ->
                 val entityList = response?.toMovieEntities(listTypeName).orEmpty()
 
                 movieDao.nukeTable(listTypeName)
                 movieDao.insertAll(entityList)
             }.onIdle {
-                resultStatus(APIResultStatus.Idle(), isRefresh)
+                resultStatus(APIResultStatus.Idle())
             }.onLoading {
-                resultStatus(APIResultStatus.Loading(), isRefresh)
+                resultStatus(APIResultStatus.Loading())
             }.onGeneralException { exception ->
-                resultStatus(APIResultStatus.GeneralException(exception), isRefresh)
+                resultStatus(APIResultStatus.GeneralException(exception))
             }.onHTTPException { exception ->
-                resultStatus(APIResultStatus.HTTPException(exception), isRefresh)
+                resultStatus(APIResultStatus.HTTPException(exception))
             }
         })
 
         return movieDao.getAll(listTypeName)
     }
 
-
     private suspend fun fetchUpcomingMovies(
-        resultStatus: (APIResultStatus<PopularMoviesResponse>, Boolean) -> Unit,
-        isRefresh: Boolean,
-        listTypeName: String
-    ): Flow<List<MovieEntity>> {
+        resultStatus: (APIResultStatus<PopularMoviesResponse>) -> Unit,
+        listTypeName: String,
+        page: Int
+    ): List<MovieEntity> {
 
-        apiRequester.sendRequest({ retrofitClient.getUpcomingMovies() }, {
+        apiRequester.sendRequest({ retrofitClient.getUpcomingMovies(page = page) }, {
             it.onSuccess { response ->
                 val entityList = response?.toMovieEntities(listTypeName).orEmpty()
 
                 movieDao.nukeTable(listTypeName)
                 movieDao.insertAll(entityList)
             }.onIdle {
-                resultStatus(APIResultStatus.Idle(), isRefresh)
+                resultStatus(APIResultStatus.Idle())
             }.onLoading {
-                resultStatus(APIResultStatus.Loading(), isRefresh)
+                resultStatus(APIResultStatus.Loading())
             }.onGeneralException { exception ->
-                resultStatus(APIResultStatus.GeneralException(exception), isRefresh)
+                resultStatus(APIResultStatus.GeneralException(exception))
             }.onHTTPException { exception ->
-                resultStatus(APIResultStatus.HTTPException(exception), isRefresh)
+                resultStatus(APIResultStatus.HTTPException(exception))
             }
         })
 

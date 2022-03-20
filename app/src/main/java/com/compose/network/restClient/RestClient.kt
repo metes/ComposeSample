@@ -9,11 +9,19 @@ import retrofit2.http.Query
 
 interface RestClient {
 
+//    @GET("/4/list/{list_id}")
+//    suspend fun getList(
+//        @Query("api_key") apiKey: String = BuildConfig.MOVIE_API_KEY,
+//        @Query("language") language: String = BuildConfig.LANGUAGE,
+//        @Query("page") page: String = BuildConfig.PAGE_1
+//    ): PopularMoviesResponse
+
+
     @GET("/3/movie/popular")
     suspend fun getPopularMovies(
         @Query("api_key") apiKey: String = BuildConfig.MOVIE_API_KEY,
         @Query("language") language: String = BuildConfig.LANGUAGE,
-        @Query("page") page: String = BuildConfig.PAGE_1
+        @Query("page") page: Int// = BuildConfig.PAGE_1
     ): PopularMoviesResponse
 
 
@@ -21,7 +29,7 @@ interface RestClient {
     suspend fun getTopRatedMovies(
         @Query("api_key") apiKey: String = BuildConfig.MOVIE_API_KEY,
         @Query("language") language: String = BuildConfig.LANGUAGE,
-        @Query("page") page: String = BuildConfig.PAGE_1
+        @Query("page") page: Int// = BuildConfig.PAGE_1
     ): PopularMoviesResponse
 
 
@@ -29,7 +37,7 @@ interface RestClient {
     suspend fun getUpcomingMovies(
         @Query("api_key") apiKey: String = BuildConfig.MOVIE_API_KEY,
         @Query("language") language: String = BuildConfig.LANGUAGE,
-        @Query("page") page: String = BuildConfig.PAGE_1
+        @Query("page") page: Int// = BuildConfig.PAGE_1
     ): PopularMoviesResponse
 
 }

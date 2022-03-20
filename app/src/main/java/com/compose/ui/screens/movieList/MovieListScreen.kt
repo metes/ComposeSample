@@ -26,6 +26,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.compose.BuildConfig
@@ -37,7 +39,10 @@ import com.compose.ui.screens.MyToolbar
 import com.compose.ui.screens.ShowIndicator
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
+@OptIn(ExperimentalCoilApi::class)
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun MovieListScreen(viewModel: MovieListViewModel, context: Context) {
@@ -65,16 +70,14 @@ fun ActionByUIState(
             }
             is UiState.ListRefreshing,
             is UiState.MovieListScreenUiState -> {
-                val movieList = if (uiState is UiState.MovieListScreenUiState) {
-                    uiState.movieList
-                } else {
-                    emptyList()
+                viewModel.pagingData?.let { flow ->
+                    ShowMovieList(
+                        moviesFlow = flow,
+                        onRefresh = { viewModel.getMovieList(ListType.Popular) },
+                        isRefreshing = uiState is UiState.ListRefreshing
+                    )
                 }
-                ShowMovieList(
-                    movieList = movieList,
-                    onRefresh = { viewModel.getMovieList(true) },
-                    isRefreshing = uiState is UiState.ListRefreshing
-                )
+
             }
             is UiState.GeneralException -> {
                 AlertDialog(
@@ -88,7 +91,7 @@ fun ActionByUIState(
                         ) {
                             TextButton(
                                 modifier = Modifier.padding(8.dp),
-                                onClick = { viewModel.getMovieList() }
+                                onClick = { viewModel.getMovieList(ListType.Popular) }
                             ) {
                                 Text(context.getString(R.string._cancel))
                             }
@@ -103,10 +106,12 @@ fun ActionByUIState(
 @ExperimentalCoilApi
 @Composable
 fun ShowMovieList(
-    movieList: List<MovieEntity>,
+    moviesFlow: Flow<PagingData<MovieEntity>>,
     onRefresh: () -> Unit,
     isRefreshing: Boolean
 ) {
+    val lazyItems = moviesFlow.collectAsLazyPagingItems()
+
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing),
         onRefresh = { onRefresh() }
@@ -116,8 +121,10 @@ fun ShowMovieList(
                 .fillMaxWidth()
                 .fillMaxHeight()
         ) {
-            itemsIndexed(movieList) { _, item ->
-                MovieListItem(item)
+            items(lazyItems.itemCount) { index ->
+                lazyItems[index]?.let { item ->
+                    MovieListItem(item)
+                }
             }
         }
     }
@@ -222,7 +229,7 @@ fun DropDownList(viewModel: MovieListViewModel) {
                 DropdownMenuItem(
                     onClick = {
                         selectedText = label
-                        viewModel.getMovieList(false, ListType.valueOf(label))
+                        viewModel.getMovieList(ListType.valueOf(label))
                         expanded = false
                     }
                 ) {
