@@ -18,7 +18,7 @@ fun PopularMoviesResponse.toMovieEntities(listTypeName: String, language: String
                     genreIds = it.genreIds?.joinToString(",").orEmpty(),
                     originalTitle = it.originalTitle.orEmpty(),
                     releaseDate = it.releaseDate.orEmpty(),
-                    title = "${page.orEmpty()} - ${it.title.orEmpty()}",
+                    title = it.title.orEmpty(),
                     voteAverage = it.voteAverage ?: 0.0f,
                     posterPath = it.posterPath.orEmpty(),
                     listType = listTypeName,

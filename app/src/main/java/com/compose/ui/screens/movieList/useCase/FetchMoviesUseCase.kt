@@ -41,9 +41,6 @@ class FetchMoviesUseCase : KoinComponent {
         apiRequester.sendRequest({ retrofitClient.getPopularMovies(page = page) }, {
             it.onSuccess { response ->
                 val entityList = response?.toMovieEntities(listTypeName).orEmpty()
-
-//                movieDao.nukeTable(listTypeName)
-
                 movieDao.insertAll(entityList)
             }.onIdle {
                 resultStatus(APIResultStatus.Idle())

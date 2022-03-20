@@ -2,13 +2,11 @@ package com.compose.ui.screens.movieList
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -40,7 +38,6 @@ import com.compose.ui.screens.ShowIndicator
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalCoilApi::class)
 @SuppressLint("UnrememberedMutableState")
@@ -123,7 +120,7 @@ fun ShowMovieList(
         ) {
             items(lazyItems.itemCount) { index ->
                 lazyItems[index]?.let { item ->
-                    MovieListItem(item)
+                    MovieListItem(item, index)
                 }
             }
         }
@@ -133,16 +130,15 @@ fun ShowMovieList(
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterialApi::class)
 @ExperimentalCoilApi
 @Composable
-fun MovieListItem(item: MovieEntity) {
+fun MovieListItem(item: MovieEntity, index: Int) {
     val showDialog = remember { mutableStateOf(false) }
     if (showDialog.value) {
         CustomDialog(openDialogCustom = showDialog)
     }
 
     val cardBgColor = colorResource(id = R.color.material_blue_grey_50)
-    val imageSize = "w300"
-    val imageUrl = BuildConfig.BASE_URL_IMG + imageSize + item.posterPath
-    Log.d("imageUrl-", imageUrl)
+    val imageUrl = BuildConfig.BASE_URL_IMG + LIST_ITEM_IMAGE_SIZE + item.posterPath
+
     Card(
         shape = MaterialTheme.shapes.medium,
         elevation = 4.dp,
@@ -163,8 +159,7 @@ fun MovieListItem(item: MovieEntity) {
                     .clip(CircleShape)
                     .background(Color.Blue),
                 contentScale = ContentScale.FillWidth,
-                painter =
-                rememberImagePainter(imageUrl),
+                painter = rememberImagePainter(imageUrl),
                 contentDescription = item.title
             )
             Column(
@@ -173,7 +168,7 @@ fun MovieListItem(item: MovieEntity) {
                     .align(Alignment.CenterVertically)
             ) {
                 Text(
-                    text = item.title
+                    text = "$index. ${item.title}"
                 )
                 MyRatingBar(
                     modifier = Modifier.width(16.dp),
