@@ -8,7 +8,9 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/mete_/StudioProjects/ComposeSample/app/src/main/res/drawable/ic_imdb_logo_2016.xml" value="0.1" />
         <entry key="..\:/Users/mete_/StudioProjects/ComposeSample/app/src/main/res/drawable/ic_rating_bar_24.xml" value="0.2972222222222222" />
+        <entry key="..\:/Users/mete_/StudioProjects/ComposeSample/app/src/main/res/drawable/ic_round_star_24.xml" value="0.1115" />
         <entry key="..\:/Users/mete_/StudioProjects/TopMovies-compose/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.10416666666666667" />
         <entry key="..\:/Users/mete_/StudioProjects/TopMovies-compose/app/src/main/res/drawable/ic_launcher_background.xml" value="0.14895833333333333" />
         <entry key="..\:/Users/mete_/StudioProjects/altin-doviz/app/src/main/res/drawable-nodpi/at.xml" value="0.1" />

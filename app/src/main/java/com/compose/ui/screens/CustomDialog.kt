@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalComposeUiApi::class)
+
 package com.compose.ui.screens
 
 import android.annotation.SuppressLint
@@ -12,93 +14,159 @@ import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import coil.compose.rememberImagePainter
 import com.compose.R
+import com.compose.db.entity.MovieEntity
+import kotlin.math.ceil
 
 
 @Composable
-fun CustomDialog(openDialogCustom: MutableState<Boolean>) {
-    Dialog(onDismissRequest = { openDialogCustom.value = false }) {
-        CustomDialogUI(openDialogCustom = openDialogCustom)
+fun CustomDialog(openDialogCustom: MutableState<Boolean>, movieEntity: MovieEntity) {
+    Dialog(
+        onDismissRequest = { openDialogCustom.value = false }
+    ) {
+        CustomDialogUI(
+            openDialogCustom = openDialogCustom,
+            movieEntity = movieEntity
+        )
     }
 }
 
 //Layout
 @Composable
-fun CustomDialogUI(modifier: Modifier = Modifier, openDialogCustom: MutableState<Boolean>) {
+fun CustomDialogUI(
+    modifier: Modifier = Modifier,
+    openDialogCustom: MutableState<Boolean>,
+    movieEntity: MovieEntity
+) {
     Card(
-//        shape = MaterialTheme.shapes.medium,
         shape = RoundedCornerShape(8.dp),
-        // modifier = modifier.size(280.dp, 240.dp)
-        modifier = Modifier.padding(8.dp, 4.dp, 8.dp, 8.dp),
-        elevation = 8.dp
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 24.dp),
     ) {
-        Column(modifier.background(Color.White)) {
+        Column(
+            modifier = modifier.background(Color.White),
+            verticalArrangement = Arrangement.Top
+        ) {
             //.......................................................................
-            Image(
-                painter = painterResource(id = R.drawable.ic_baseline_notifications_24),
-                contentDescription = null, // decorative
-                contentScale = ContentScale.Fit,
-                colorFilter = ColorFilter.tint(color = colorResource(R.color.purple_500)),
+            Row(
                 modifier = Modifier
-                    .padding(top = 32.dp)
-                    .height(72.dp)
-                    .fillMaxWidth(),
-
-                )
-
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Get Updates",
-                    textAlign = TextAlign.Center,
+                    .fillMaxWidth()
+                    .height(220.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    contentDescription = null, // decorative
+                    contentScale = ContentScale.Fit,
+                    painter = rememberImagePainter(
+                        getImageFromMovieEntity(
+                            movieEntity = movieEntity,
+                            imageSize = 500
+                        )
+                    ),
                     modifier = Modifier
-                        .padding(top = 4.dp)
-                        .fillMaxWidth(),
-                    style = MaterialTheme.typography.button,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                        .aspectRatio(500f / 750f)
+                        .fillMaxHeight()
                 )
-                Text(
-                    text = "Allow Permission to send you notifications when new art styles added.",
-                    textAlign = TextAlign.Center,
+
+                Column(
                     modifier = Modifier
-                        .padding(top = 8.dp, start = 24.dp, end = 24.dp)
-                        .fillMaxWidth(),
-                    style = MaterialTheme.typography.button
-                )
+                        .padding(8.dp)
+                        .fillMaxHeight()
+                ) {
+                    Text(
+                        text = movieEntity.title,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp),
+                        color = colorResource(R.color.black),
+                        style = MaterialTheme.typography.h6,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        MyRatingBar(
+                            modifier = Modifier.width(16.dp),
+                            rating = ceil(movieEntity.voteAverage / 2.0)
+                        )
+
+                        Text(
+                            text = movieEntity.voteAverage.toString(),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(start = 4.dp),
+                            color = colorResource(R.color.material_grey_700),
+                            style = MaterialTheme.typography.subtitle2
+                        )
+                    }
+
+                    Text(
+                        text = movieEntity.originalLang,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp),
+                        color = colorResource(R.color.material_grey_700),
+                        style = MaterialTheme.typography.subtitle2
+                    )
+
+                    Text(
+                        text = movieEntity.releaseDate,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp),
+                        color = colorResource(R.color.material_grey_700),
+                        style = MaterialTheme.typography.subtitle2
+                    )
+
+                    Text(
+                        text = movieEntity.genreIds,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp),
+                        color = colorResource(R.color.material_grey_700),
+                        style = MaterialTheme.typography.subtitle2
+                    )
+
+                }
             }
+
+
             //.......................................................................
             Row(
                 Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp)
-                    .background(colorResource(R.color.purple_700)),
+                    .background(colorResource(R.color.material_grey_50)),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                TextButton(onClick = { openDialogCustom.value = false }) {
+                TextButton(
+                    onClick = { openDialogCustom.value = false }
+                ) {
                     Text(
-                        "Not Now",
+                        text = getString(resId = R.string.save_to_list),
                         fontWeight = FontWeight.Bold,
-                        color = colorResource(R.color.purple_500),
+                        color = colorResource(R.color.material_grey_700),
                         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                     )
                 }
-                TextButton(onClick = { openDialogCustom.value = false }) {
+
+                TextButton(
+                    onClick = { openDialogCustom.value = false }
+                ) {
                     Text(
-                        "Allow",
+                        text = getString(android.R.string.ok),
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.Black,
+                        color = colorResource(R.color.material_grey_700),
                         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                     )
                 }
@@ -112,5 +180,8 @@ fun CustomDialogUI(modifier: Modifier = Modifier, openDialogCustom: MutableState
 @Preview(name = "Custom Dialog")
 @Composable
 fun MyDialogUIPreview() {
-    CustomDialogUI(openDialogCustom = mutableStateOf(false))
+    CustomDialogUI(
+        openDialogCustom = mutableStateOf(false),
+        movieEntity = getEmptyMovieEntity()
+    )
 }

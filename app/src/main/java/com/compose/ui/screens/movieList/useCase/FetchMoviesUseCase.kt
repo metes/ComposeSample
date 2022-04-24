@@ -2,11 +2,11 @@ package com.compose.ui.screens.movieList.useCase
 
 import com.compose.db.dao.MovieDao
 import com.compose.db.entity.MovieEntity
+import com.compose.network.model.response.movie.movieDetail.MovieDetailsResponse
 import com.compose.network.model.response.movie.popular.PopularMoviesResponse
 import com.compose.network.requester.*
 import com.compose.tools.toMovieEntities
 import com.compose.ui.screens.movieList.ListType
-import kotlinx.coroutines.flow.Flow
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -111,4 +111,13 @@ class FetchMoviesUseCase : KoinComponent {
         return movieDao.getAll(listTypeName)
     }
 
+
+    suspend fun getMovieDetails(
+        movieId: Int,
+        resultStatus:suspend (APIResultStatus<MovieDetailsResponse?>) -> Unit,
+    ) {
+        apiRequester.sendRequest({ retrofitClient.getMovieDetails(movieId = movieId) }) {
+            resultStatus(it)
+        }
+    }
 }

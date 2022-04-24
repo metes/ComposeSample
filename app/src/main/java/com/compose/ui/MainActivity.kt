@@ -73,10 +73,7 @@ class MainActivity : ComponentActivity() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(AppScreen.Currency.navRoute) {
-                MovieListScreen(
-                    context = baseContext,
-                    viewModel = movieListViewModel
-                )
+                MovieListScreen(viewModel = movieListViewModel)
             }
             composable(AppScreen.Profile.navRoute) {
                 ProfileScreen(navController)

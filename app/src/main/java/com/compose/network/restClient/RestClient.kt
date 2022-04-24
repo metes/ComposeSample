@@ -1,8 +1,10 @@
 package com.compose.network.restClient
 
 import com.compose.BuildConfig
+import com.compose.network.model.response.movie.movieDetail.MovieDetailsResponse
 import com.compose.network.model.response.movie.popular.PopularMoviesResponse
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 
@@ -39,5 +41,12 @@ interface RestClient {
         @Query("language") language: String = BuildConfig.LANGUAGE,
         @Query("page") page: Int// = BuildConfig.PAGE_1
     ): PopularMoviesResponse
+
+    @GET("/3/movie/{movieId}")
+    suspend fun getMovieDetails(
+        @Path("movieId") movieId: Int,
+        @Query("api_key") apiKey: String = BuildConfig.MOVIE_API_KEY,
+        @Query("language") language: String = BuildConfig.LANGUAGE,
+      ): MovieDetailsResponse?
 
 }

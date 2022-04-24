@@ -6,4 +6,5 @@
     <string name="movies">Movies</string>
     <string name="general_error">Error</string>
     <string name="_cancel">İptal</string>
+    <string name="save_to_list">Save To List</string>
 </resources>
