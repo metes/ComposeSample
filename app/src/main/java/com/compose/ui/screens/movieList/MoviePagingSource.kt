@@ -10,18 +10,15 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 
 class MoviePagingSource(
-    val resultStatus: (APIResultStatus<PopularMoviesResponse>) -> Unit,
-    val useCase: FetchMoviesUseCase,
-    val listType: ListType
+    private val resultStatus: (APIResultStatus<PopularMoviesResponse>) -> Unit,
+    private val useCase: FetchMoviesUseCase,
+    private val listType: ListType
 ): PagingSource<Int, MovieEntity>() {
-
-    var nextPageNumber = 1
 
     override suspend fun load(
         params: LoadParams<Int>
     ): LoadResult<Int, MovieEntity> {
         val position = (params.key ?: STARTING_INDEX)
-        var loadResult: LoadResult<Int, MovieEntity>
 
         try {
             val response = useCase.fetchMovieListByType(
@@ -33,7 +30,7 @@ class MoviePagingSource(
             return LoadResult.Page(
                 data = response,
                 prevKey = null, // Only paging forward.
-                nextKey =  position + SEARCH_RESULTS_PAGE_SIZE
+                nextKey =  position + 1
             )
         } catch (e: Exception) {
             // Handle errors in this block and return LoadResult.Error if it is an
@@ -60,7 +57,6 @@ class MoviePagingSource(
 
     companion object {
         const val STARTING_INDEX = 1
-        const val SEARCH_RESULTS_PAGE_SIZE = 10
     }
 
 }
