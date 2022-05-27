@@ -29,8 +29,11 @@ import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.compose.R
 import com.compose.db.entity.MovieEntity
-import com.compose.ui.screens.*
-import kotlinx.coroutines.flow.Flow
+import com.compose.ui.screens.MyRatingBar
+import com.compose.ui.screens.MyToolbar
+import com.compose.ui.screens.getImageFromMovieEntity
+import com.compose.ui.screens.getString
+import kotlinx.coroutines.flow.SharedFlow
 
 @OptIn(ExperimentalCoilApi::class)
 @SuppressLint("UnrememberedMutableState")
@@ -43,6 +46,7 @@ fun MovieListScreen(viewModel: MovieListViewModel) {
 @Composable
 fun ActionByUIState(viewModel: MovieListViewModel) {
     val collectedUIState by viewModel.uiState.collectAsState()
+    val movieDetailById by viewModel.onMovieDetail.collectAsState()
 
     Column {
         MyToolbar()
@@ -57,15 +61,12 @@ fun ActionByUIState(viewModel: MovieListViewModel) {
             }
             is UiState.ListRefreshing,
             is UiState.MovieListScreenUiState -> {
-                viewModel.pagingData?.let { flow ->
-                    ShowMovieList(
-                        viewModel = viewModel,
-                        moviesFlow = flow,
-                        onRefresh = { viewModel.getMovieList(ListType.Popular) },
-                        isRefreshing = uiState is UiState.ListRefreshing
-                    )
-                }
-
+                ShowMovieList(
+                    viewModel = viewModel,
+                    moviesFlow = viewModel.pagingData,
+                    onRefresh = { viewModel.getMovieList(ListType.Popular) },
+                    isRefreshing = uiState is UiState.ListRefreshing
+                )
             }
             is UiState.GeneralException -> {
                 AlertDialog(
@@ -89,13 +90,20 @@ fun ActionByUIState(viewModel: MovieListViewModel) {
             }
         }
     }
+
+
+//    if (movieDetailById != null) {
+//        CustomDialog(
+//            openDialogCustom = MutableState<Boolean>(movieDetailById != null),
+//            movieEntity =  movieDetailById)
+//    }
 }
 
 @ExperimentalCoilApi
 @Composable
 fun ShowMovieList(
     viewModel: MovieListViewModel,
-    moviesFlow: Flow<PagingData<MovieEntity>>,
+    moviesFlow: SharedFlow<PagingData<MovieEntity>>,//Flow<PagingData<MovieEntity>>,
     onRefresh: () -> Unit,
     isRefreshing: Boolean
 ) {
@@ -127,9 +135,7 @@ fun MovieListItem(
 ) {
     val showDialog = remember { mutableStateOf(false) }
     if (showDialog.value) {
-        viewModel.getMovieDetails(item.id) {
-            CustomDialog(openDialogCustom = showDialog, item)
-        }
+        viewModel.getMovieDetails(item.id)
     }
 
     val cardBgColor = colorResource(id = R.color.material_blue_grey_50)
