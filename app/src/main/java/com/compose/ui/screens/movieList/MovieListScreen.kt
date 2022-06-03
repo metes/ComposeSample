@@ -29,10 +29,7 @@ import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.compose.R
 import com.compose.db.entity.MovieEntity
-import com.compose.ui.screens.MyRatingBar
-import com.compose.ui.screens.MyToolbar
-import com.compose.ui.screens.getImageFromMovieEntity
-import com.compose.ui.screens.getString
+import com.compose.ui.screens.*
 import kotlinx.coroutines.flow.SharedFlow
 
 @OptIn(ExperimentalCoilApi::class)
@@ -52,21 +49,23 @@ fun ActionByUIState(viewModel: MovieListViewModel) {
         MyToolbar()
         DropDownList(viewModel)
 
+        ShowMovieList(
+            viewModel = viewModel,
+            moviesFlow = viewModel.pagingData,
+            onRefresh = { viewModel.getMovieList(ListType.Popular) },
+            isRefreshing = collectedUIState is UiState.ListRefreshing
+        )
+
         when (val uiState = collectedUIState) {
             is UiState.Idle -> {
                 /* Do Nothing */
             }
             is UiState.Loading -> {
-//                ShowIndicator()
+                ShowIndicator()
             }
             is UiState.ListRefreshing,
             is UiState.MovieListScreenUiState -> {
-                ShowMovieList(
-                    viewModel = viewModel,
-                    moviesFlow = viewModel.pagingData,
-                    onRefresh = { viewModel.getMovieList(ListType.Popular) },
-                    isRefreshing = uiState is UiState.ListRefreshing
-                )
+               /** todo **/
             }
             is UiState.GeneralException -> {
                 AlertDialog(
@@ -88,6 +87,7 @@ fun ActionByUIState(viewModel: MovieListViewModel) {
                     }
                 )
             }
+            else -> {}
         }
     }
 
@@ -113,7 +113,7 @@ fun ShowMovieList(
 //        state = rememberSwipeRefreshState(isRefreshing),
 //        onRefresh = { onRefresh() }
 //    ) {
-        LazyColumn(
+       return LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
