@@ -3,41 +3,28 @@ package com.compose.ui.screens.movieList
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.compose.db.entity.MovieEntity
-import com.compose.network.model.response.movie.popular.PopularMoviesResponse
-import com.compose.network.requester.APIResultStatus
-import com.compose.ui.screens.movieList.useCase.FetchMoviesUseCase
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.runBlocking
 
 class MoviePagingSource(
-    private val resultStatus: (APIResultStatus<PopularMoviesResponse>) -> Unit,
-    private val useCase: FetchMoviesUseCase,
-    private val listType: ListType
+    private val fetchMoviePage: suspend (pageIndex: Int) -> List<MovieEntity>,
 ): PagingSource<Int, MovieEntity>() {
 
     override suspend fun load(
         params: LoadParams<Int>
     ): LoadResult<Int, MovieEntity> {
-        val position = (params.key ?: STARTING_INDEX)
+        val pageIndex = (params.key ?: STARTING_INDEX)
 
-        try {
-            val response = useCase.fetchMovieListByType(
-                resultStatus = resultStatus,
-                listType = listType,
-                page = position
-            )
-
-            return LoadResult.Page(
-                data = response,
+        return try {
+            LoadResult.Page(
+                data = fetchMoviePage(pageIndex),
                 prevKey = null, // Only paging forward.
-                nextKey =  position + 1
+                nextKey =  pageIndex + 1
             )
         } catch (e: Exception) {
             // Handle errors in this block and return LoadResult.Error if it is an
             // expected error (such as a network failure).
             e.printStackTrace()
 
-            return LoadResult.Error(e)
+            LoadResult.Error(e)
         }
     }
 
