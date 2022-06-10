@@ -12,8 +12,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -33,24 +31,23 @@ import kotlin.math.ceil
 
 
 @Composable
-fun CustomDialog(openDialogCustom: MutableState<Boolean>, movieEntity: MovieEntity) {
-    Dialog(
-        onDismissRequest = { openDialogCustom.value = false }
-    ) {
-        CustomDialogUI(
-            openDialogCustom = openDialogCustom,
-            movieEntity = movieEntity
-        )
+fun CustomDialog(
+    customComposableView: @Composable() () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        customComposableView()
     }
 }
 
 //Layout
 @Composable
-fun CustomDialogUI(
-    modifier: Modifier = Modifier,
-    openDialogCustom: MutableState<Boolean>,
-    movieEntity: MovieEntity
+fun MovieDetailDialogView(
+    movieEntity: MovieEntity,
+    closeDialog: () -> Unit
 ) {
+    val modifier: Modifier = Modifier
+
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
@@ -150,7 +147,7 @@ fun CustomDialogUI(
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 TextButton(
-                    onClick = { openDialogCustom.value = false }
+                    onClick = { closeDialog() }, //{ openDialogCustom.value = false }
                 ) {
                     Text(
                         text = getString(resId = R.string.save_to_list),
@@ -161,7 +158,7 @@ fun CustomDialogUI(
                 }
 
                 TextButton(
-                    onClick = { openDialogCustom.value = false }
+                    onClick = { closeDialog() }, //{ openDialogCustom.value = false }
                 ) {
                     Text(
                         text = getString(android.R.string.ok),
@@ -180,8 +177,9 @@ fun CustomDialogUI(
 @Preview(name = "Custom Dialog")
 @Composable
 fun MyDialogUIPreview() {
-    CustomDialogUI(
-        openDialogCustom = mutableStateOf(false),
+    MovieDetailDialogView(
         movieEntity = getEmptyMovieEntity()
-    )
+    ) {
+        // todo
+    }
 }

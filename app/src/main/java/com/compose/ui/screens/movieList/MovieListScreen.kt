@@ -65,7 +65,33 @@ fun ActionByUIState(viewModel: MovieListViewModel) {
                         isRefreshing = uiState is UiState.ListRefreshing
                     )
                 }
+            }
+            is UiState.DetailDialog -> {
 
+                ShowMovieList(
+                    viewModel = viewModel,
+                    moviesFlow = uiState.movieList,
+                    onRefresh = { viewModel.getMovieList(ListType.Popular) },
+                    isRefreshing = uiState is UiState.ListRefreshing
+                )
+
+                CustomDialog(
+                    customComposableView = {
+                        MovieDetailDialogView(
+                            movieEntity = uiState.movie,
+                            closeDialog = {
+                                viewModel.setState(
+                                    UiState.MovieListScreenUiState(movieList = uiState.movieList)
+                                )
+                            }
+                        )
+                    },
+                    onDismiss = {
+                        viewModel.setState(
+                            UiState.MovieListScreenUiState(movieList = uiState.movieList)
+                        )
+                    }
+                )
             }
             is UiState.GeneralException -> {
                 AlertDialog(
@@ -105,17 +131,17 @@ fun ShowMovieList(
 //        state = rememberSwipeRefreshState(isRefreshing),
 //        onRefresh = { onRefresh() }
 //    ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-        ) {
-            items(lazyItems.itemCount) { index ->
-                lazyItems[index]?.let { item ->
-                    MovieListItem(viewModel, item, index + 1)
-                }
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+    ) {
+        items(lazyItems.itemCount) { index ->
+            lazyItems[index]?.let { item ->
+                MovieListItem(viewModel, item, index + 1)
             }
         }
+    }
 //    }
 }
 
@@ -125,20 +151,13 @@ fun ShowMovieList(
 fun MovieListItem(
     viewModel: MovieListViewModel, item: MovieEntity, index: Int
 ) {
-    val showDialog = remember { mutableStateOf(false) }
-    if (showDialog.value) {
-        viewModel.getMovieDetails(item.id) {
-            CustomDialog(openDialogCustom = showDialog, item)
-        }
-    }
-
     val cardBgColor = colorResource(id = R.color.material_blue_grey_50)
 
     Card(
         shape = MaterialTheme.shapes.medium,
         elevation = 4.dp,
         onClick = {
-            showDialog.value = true
+            viewModel.getMovieDetails(movieId = item.id)
         },
         modifier = Modifier
             .padding(24.dp)

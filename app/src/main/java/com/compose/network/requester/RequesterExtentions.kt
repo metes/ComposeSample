@@ -33,8 +33,8 @@ fun <T> APIResultStatus<T>.onHTTPException(
     return this
 }
 
-fun <T> APIResultStatus<T>.onGeneralException(
-    action: (exception: Exception) -> Unit
+suspend fun <T> APIResultStatus<T>.onGeneralException(
+    action: suspend (exception: Exception) -> Unit
 ): APIResultStatus<T> {
     if (this is APIResultStatus.GeneralException) {
         action(this.exception)

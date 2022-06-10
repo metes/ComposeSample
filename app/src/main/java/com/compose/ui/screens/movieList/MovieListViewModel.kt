@@ -1,21 +1,22 @@
 package com.compose.ui.screens.movieList
 
-import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.compose.db.entity.MovieEntity
-import com.compose.network.model.response.movie.movieDetail.MovieDetailsResponse
 import com.compose.network.model.response.movie.popular.PopularMoviesResponse
 import com.compose.network.requester.APIResultStatus
+import com.compose.network.requester.onGeneralException
 import com.compose.network.requester.onSuccess
+import com.compose.tools.toMovieEntity
 import com.compose.ui.screens.movieList.useCase.FetchMoviesUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -39,10 +40,10 @@ class MovieListViewModel : ViewModel(), KoinComponent {
 
     fun getMovieList(listType: ListType) {
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.emit(UiState.ListRefreshing(false))
+            setState(UiState.ListRefreshing(false))
 
             pagingData?.let {
-                _uiState.emit(UiState.MovieListScreenUiState(movieList = it))
+                setState(UiState.MovieListScreenUiState(movieList = it))
             }
         }
 
@@ -51,7 +52,6 @@ class MovieListViewModel : ViewModel(), KoinComponent {
         pagingData = Pager(
             config = PagingConfig(pageSize = 10, enablePlaceholders = false),
             pagingSourceFactory = { movieSource }
-
         ).flow
     }
 
@@ -73,17 +73,30 @@ class MovieListViewModel : ViewModel(), KoinComponent {
         }
     }
 
-    fun getMovieDetails(
-        movieId: Int,
-        function: @Composable (MovieDetailsResponse?) -> Unit
-    ) {
+    fun getMovieDetails(movieId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             moviesUseCase.getMovieDetails(movieId) { apiResultStatus ->
-
                 apiResultStatus.onSuccess {
-                    function(it)
+                    it?.let { safeDetailResponse ->
+                        setState(
+                            UiState.DetailDialog(
+                                safeDetailResponse.toMovieEntity(),
+                                pagingData?: flowOf()
+                            ),
+                        )
+                    } ?: run {
+                        setState(UiState.GeneralException())
+                    }
+                }.onGeneralException {
+                    setState(UiState.GeneralException())
                 }
             }
+        }
+    }
+
+    fun setState(state: UiState) {
+        viewModelScope.launch {
+            _uiState.emit(state)
         }
     }
 

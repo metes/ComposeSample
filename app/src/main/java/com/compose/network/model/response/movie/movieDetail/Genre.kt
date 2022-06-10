@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 
 data class Genre(
     @SerializedName("id")
-    val id: Int? = 0, // 28
+    val id: Int? = 0, // 18
     @SerializedName("name")
-    val name: String? = "" // Action
+    val name: String? = "" // Drama
 )
