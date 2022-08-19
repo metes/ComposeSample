@@ -3,10 +3,15 @@ package com.compose.ui.screens.movieList
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.compose.db.entity.MovieEntity
+import com.compose.ui.screens.movieList.useCase.FetchMoviesUseCase
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 class MoviePagingSource(
-    private val fetchMoviePage: suspend (pageIndex: Int) -> List<MovieEntity>,
-): PagingSource<Int, MovieEntity>() {
+    private val listType: ListType
+) : PagingSource<Int, MovieEntity>(), KoinComponent {
+
+    private val fetchMoviesUseCase: FetchMoviesUseCase by inject()
 
     override suspend fun load(
         params: LoadParams<Int>
@@ -15,9 +20,9 @@ class MoviePagingSource(
 
         return try {
             LoadResult.Page(
-                data = fetchMoviePage(pageIndex),
+                data = fetchMoviesUseCase.fetchMovies(listType, pageIndex),
                 prevKey = null, // Only paging forward.
-                nextKey =  pageIndex + 1
+                nextKey = pageIndex + 1
             )
         } catch (e: Exception) {
             // Handle errors in this block and return LoadResult.Error if it is an
@@ -43,6 +48,7 @@ class MoviePagingSource(
     }
 
     companion object {
+
         const val STARTING_INDEX = 1
     }
 

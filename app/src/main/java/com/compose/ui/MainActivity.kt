@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
     private val movieListViewModel by inject<MovieListViewModel>()
 
     private val items = listOf(
-        AppScreen.Currency,
+        AppScreen.Movies,
         AppScreen.Profile
     )
 
@@ -48,12 +48,12 @@ class MainActivity : ComponentActivity() {
 
     @Preview(showBackground = true)
     @Composable
-    fun DefaultPreview() {
+    private fun DefaultPreview() {
         ActivityContent()
     }
 
     @Composable
-    fun ActivityContent() {
+    private fun ActivityContent() {
         val navController = rememberNavController()
 
         TopMoviesTheme {
@@ -65,24 +65,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-     @Composable
-     private fun MyNavHost(navController: NavHostController, innerPadding: PaddingValues) {
+    @Composable
+    private fun MyNavHost(navController: NavHostController, innerPadding: PaddingValues) {
         NavHost(
             navController = navController,
-            startDestination = AppScreen.Currency.navRoute,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            startDestination = AppScreen.Movies.navRoute
         ) {
-            composable(AppScreen.Currency.navRoute) {
-                MovieListScreen(viewModel = movieListViewModel)
+            composable(AppScreen.Movies.navRoute) {
+                MovieListScreen.SetScreen(viewModel = movieListViewModel)
             }
             composable(AppScreen.Profile.navRoute) {
-                ProfileScreen(navController)
+                ProfileScreen.SetScreen(navController = navController)
             }
         }
     }
 
     @Composable
-    private  fun MyBottomBarNavigation(navController: NavHostController) {
+    private fun MyBottomBarNavigation(navController: NavHostController) {
         BottomNavigation {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
                         onNavigationItemClick(screen, navController)
                     },
                     selected = currentDestination?.hierarchy
-                        ?.any { it.route == screen.navRoute  } == true,
+                        ?.any { it.route == screen.navRoute } == true,
                 )
             }
         }
@@ -122,21 +122,18 @@ class MainActivity : ComponentActivity() {
             restoreState = true
         }
     }
+}
 
+sealed class AppScreen(
+    val navRoute: String,
+    @StringRes val resourceId: Int,
+    val screenIcon: ImageVector
+) {
+    object Movies : AppScreen(NavRoute.Movies.route, R.string.top_movies, Icons.Filled.List)
+    object Profile : AppScreen(NavRoute.Profile.route, R.string.profile, Icons.Filled.Person)
+}
 
-    sealed class AppScreen(
-        val navRoute: String,
-        @StringRes val resourceId: Int,
-        val screenIcon: ImageVector
-    ) {
-        object Currency : AppScreen(NavRoute.Movies.route, R.string.top_movies, Icons.Filled.List)
-        object Profile :AppScreen(NavRoute.Profile.route, R.string.profile, Icons.Filled.Person)
-    }
-
-    companion object {
-        enum class NavRoute(val route: String) {
-            Movies("Movies"),
-            Profile("Profile")
-        }
-    }
+enum class NavRoute(val route: String) {
+    Movies("Movies"),
+    Profile("Profile")
 }

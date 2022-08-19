@@ -23,230 +23,235 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.compose.R
 import com.compose.db.entity.MovieEntity
-import com.compose.ui.screens.*
-import kotlinx.coroutines.flow.Flow
+import com.compose.ui.screens.MyRatingBar
+import com.compose.ui.screens.MyToolbar
+import com.compose.ui.screens.getImageFromMovieEntity
+import com.compose.ui.screens.getString
+import com.compose.ui.screens.movieList.uistate.MovieScreenUiState
 
-@OptIn(ExperimentalCoilApi::class)
-@SuppressLint("UnrememberedMutableState")
-@Composable
-fun MovieListScreen(viewModel: MovieListViewModel) {
-    ActionByUIState(viewModel)
-}
+object MovieListScreen {
 
-@ExperimentalCoilApi
-@Composable
-fun ActionByUIState(viewModel: MovieListViewModel) {
-    val collectedUIState by viewModel.uiState.collectAsState()
+    @OptIn(ExperimentalCoilApi::class)
+    @SuppressLint("UnrememberedMutableState")
+    @Composable
+    fun SetScreen(viewModel: MovieListViewModel) {
+        ActionByUIState(viewModel)
+    }
 
-    Column {
-        MyToolbar()
-        DropDownList(viewModel)
+    @ExperimentalCoilApi
+    @Composable
+    private fun ActionByUIState(viewModel: MovieListViewModel) {
+        val movieUiState by viewModel.movieListState.collectAsState()
+        val dialogUiState by viewModel.dialogUiState.collectAsState()
 
-        when (val uiState = collectedUIState) {
-            is UiState.Idle -> {
-                /* Do Nothing */
-            }
-            is UiState.Loading -> {
-//                ShowIndicator()
-            }
-            is UiState.ListRefreshing,
-            is UiState.MovieListScreenUiState -> {
-                viewModel.pagingData?.let { flow ->
-                    ShowMovieList(
-                        viewModel = viewModel,
-                        moviesFlow = flow,
-                        onRefresh = { viewModel.getMovieList(ListType.Popular) },
-                        isRefreshing = uiState is UiState.ListRefreshing
-                    )
+        Column {
+            MyToolbar()
+            DropDownList(viewModel)
+
+            HandleMovieListState(movieUiState, viewModel)
+
+            HandleDetailDialogState(dialogUiState, viewModel)
+        }
+    }
+
+    @Composable
+    private fun HandleDetailDialogState(
+        collectedDetailDialogUiState: MovieScreenUiState.DetailDialog,
+        viewModel: MovieListViewModel
+    ) {
+        when (collectedDetailDialogUiState) {
+            is MovieScreenUiState.DetailDialog.Idle -> Unit
+            is MovieScreenUiState.DetailDialog.DetailDialog -> {
+                MovieDetailsDialog.SetView(movieEntity = collectedDetailDialogUiState.movie) {
+                    viewModel.getMovieDetails(0)
                 }
-            }
-            is UiState.DetailDialog -> {
-
-                ShowMovieList(
-                    viewModel = viewModel,
-                    moviesFlow = uiState.movieList,
-                    onRefresh = { viewModel.getMovieList(ListType.Popular) },
-                    isRefreshing = uiState is UiState.ListRefreshing
-                )
-
-                CustomDialog(
-                    customComposableView = {
-                        MovieDetailDialogView(
-                            movieEntity = uiState.movie,
-                            closeDialog = {
-                                viewModel.setState(
-                                    UiState.MovieListScreenUiState(movieList = uiState.movieList)
-                                )
-                            }
-                        )
-                    },
-                    onDismiss = {
-                        viewModel.setState(
-                            UiState.MovieListScreenUiState(movieList = uiState.movieList)
-                        )
-                    }
-                )
-            }
-            is UiState.GeneralException -> {
-                AlertDialog(
-                    onDismissRequest = { /* Do Nothing */ },
-                    title = { Text(getString(R.string.general_error)) },
-                    text = { Text(uiState.exception?.message.orEmpty()) }, // todo show meaningful message
-                    buttons = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(
-                                modifier = Modifier.padding(8.dp),
-                                onClick = { viewModel.getMovieList(ListType.Popular) }
-                            ) {
-                                Text(getString(R.string._cancel))
-                            }
-                        }
-                    }
-                )
             }
         }
     }
-}
 
-@ExperimentalCoilApi
-@Composable
-fun ShowMovieList(
-    viewModel: MovieListViewModel,
-    moviesFlow: Flow<PagingData<MovieEntity>>,
-    onRefresh: () -> Unit,
-    isRefreshing: Boolean
-) {
-    val lazyItems = moviesFlow.collectAsLazyPagingItems()
+    @Composable
+    private fun HandleMovieListState(
+        collectedMovieListState: MovieScreenUiState.MovieList,
+        viewModel: MovieListViewModel
+    ) {
+        when (collectedMovieListState) {
+            is MovieScreenUiState.MovieList.Idle -> Unit
+            is MovieScreenUiState.MovieList.Loading -> Unit
+            is MovieScreenUiState.MovieList.ListRefreshing -> Unit
+            is MovieScreenUiState.MovieList.MovieListScreenMovieList -> {
+                ShowMovieList(
+                    viewModel = viewModel,
+//                    onRefresh = { viewModel.getMovieList(ListType.Popular) },
+//                    isRefreshing = uiState is UiState.ListRefreshing,
+                )
+            }
+            is MovieScreenUiState.MovieList.GeneralException -> {
+                ExceptionAlert(viewModel, collectedMovieListState)
+            }
+        }
+    }
 
-//    SwipeRefresh(
+    @ExperimentalCoilApi
+    @Composable
+    private fun ShowMovieList(viewModel: MovieListViewModel) {
+        val lazyItems = viewModel.currentPagingData?.collectAsLazyPagingItems() ?: return
+
+        //    SwipeRefresh(
 //        state = rememberSwipeRefreshState(isRefreshing),
 //        onRefresh = { onRefresh() }
 //    ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-    ) {
-        items(lazyItems.itemCount) { index ->
-            lazyItems[index]?.let { item ->
-                MovieListItem(viewModel, item, index + 1)
-            }
-        }
-    }
-//    }
-}
-
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterialApi::class)
-@ExperimentalCoilApi
-@Composable
-fun MovieListItem(
-    viewModel: MovieListViewModel, item: MovieEntity, index: Int
-) {
-    val cardBgColor = colorResource(id = R.color.material_blue_grey_50)
-
-    Card(
-        shape = MaterialTheme.shapes.medium,
-        elevation = 4.dp,
-        onClick = {
-            viewModel.getMovieDetails(movieId = item.id)
-        },
-        modifier = Modifier
-            .padding(24.dp)
-            .fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.background(cardBgColor)
-        ) {
-            Image(
-                modifier = Modifier
-                    .size(64.dp)
-                    .padding(8.dp)
-                    .clip(CircleShape)
-                    .background(Color.Blue),
-                contentScale = ContentScale.FillWidth,
-                painter = rememberImagePainter(getImageFromMovieEntity(movieEntity = item)),
-                contentDescription = item.title
-            )
-            Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .align(Alignment.CenterVertically)
-            ) {
-                Text(
-                    text = "$index - ${item.title}"
-                )
-
-                MyRatingBar(
-                    modifier = Modifier.width(16.dp),
-                    rating = item.voteAverage.toDouble()
-                )
-
-                Text(
-                    text = item.releaseDate,
-                    fontStyle = FontStyle.Italic
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun DropDownList(viewModel: MovieListViewModel) {
-    var expanded by remember { mutableStateOf(false) }
-    val listTypeNames = ListType.values().map { it.name }
-    var selectedText by remember { mutableStateOf(listTypeNames.first()) }
-
-    var dropDownWidth by remember { mutableStateOf(0) }
-
-    val icon = if (expanded) {
-        Icons.Filled.ArrowForward
-    } else {
-        Icons.Filled.ArrowDropDown
-    }
-
-    Column(
-        modifier = Modifier.clickable {
-            expanded = true
-        }
-    ) {
-        OutlinedTextField(
-            enabled = false,
-            value = selectedText,
-            onValueChange = { selectedText = it },
+        LazyColumn(
             modifier = Modifier
-                .padding(16.dp)
                 .fillMaxWidth()
-                .onSizeChanged { dropDownWidth = it.width },
-            label = { ListType.valueOf(selectedText) },
-            trailingIcon = {
-                Icon(icon, "contentDescription", Modifier.clickable { expanded = !expanded })
-            }
-        )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.width(with(LocalDensity.current) { dropDownWidth.toDp() })
+                .fillMaxHeight()
         ) {
-            listTypeNames.forEach { label ->
-                DropdownMenuItem(
-                    onClick = {
-                        selectedText = label
-                        viewModel.getMovieList(ListType.valueOf(label))
-                        expanded = false
-                    }
-                ) {
-                    Text(text = label)
+            items(lazyItems.itemCount) { index ->
+                lazyItems[index]?.let { movieEntity ->
+                    MovieListItem(movieEntity, index + 1, viewModel)
                 }
             }
         }
+//    }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterialApi::class)
+    @ExperimentalCoilApi
+    @Composable
+    private fun MovieListItem(
+        movieEntity: MovieEntity,
+        index: Int,
+        viewModel: MovieListViewModel
+    ) {
+        val cardBgColor = colorResource(id = R.color.material_blue_grey_50)
+
+        Card(
+            shape = MaterialTheme.shapes.medium,
+            elevation = 4.dp,
+            onClick = {
+                viewModel.getMovieDetails(movieEntity.id)
+            },
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth()
+                .clickable {
+                    viewModel.getMovieDetails(movieEntity.id)
+                }
+        ) {
+            Row(
+                modifier = Modifier.background(cardBgColor)
+            ) {
+                Image(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .padding(8.dp)
+                        .clip(CircleShape)
+                        .background(Color.Blue),
+                    contentScale = ContentScale.FillWidth,
+                    painter = rememberImagePainter(getImageFromMovieEntity(movieEntity = movieEntity)),
+                    contentDescription = movieEntity.title
+                )
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .align(Alignment.CenterVertically)
+                ) {
+                    Text(
+                        text = "$index - ${movieEntity.title}"
+                    )
+
+                    MyRatingBar(
+                        modifier = Modifier.width(16.dp),
+                        rating = movieEntity.voteAverage.toDouble()
+                    )
+
+                    Text(
+                        text = movieEntity.releaseDate,
+                        fontStyle = FontStyle.Italic
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun DropDownList(viewModel: MovieListViewModel) {
+        var expanded by remember { mutableStateOf(false) }
+        val listTypeNames = ListType.values().map { it.name }
+        var selectedText by remember { mutableStateOf(listTypeNames.first()) }
+
+        var dropDownWidth by remember { mutableStateOf(0) }
+
+        val icon = if (expanded) {
+            Icons.Filled.ArrowForward
+        } else {
+            Icons.Filled.ArrowDropDown
+        }
+
+        Column(
+            modifier = Modifier.clickable {
+                expanded = true
+            }
+        ) {
+            OutlinedTextField(
+                enabled = false,
+                value = selectedText,
+                onValueChange = { selectedText = it },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .onSizeChanged { dropDownWidth = it.width },
+                label = { ListType.valueOf(selectedText) },
+                trailingIcon = {
+                    Icon(icon, "contentDescription", Modifier.clickable { expanded = !expanded })
+                }
+            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.width(with(LocalDensity.current) { dropDownWidth.toDp() })
+            ) {
+                listTypeNames.forEach { label ->
+                    DropdownMenuItem(
+                        onClick = {
+                            selectedText = label
+                            viewModel.getMovieList(ListType.valueOf(label))
+                            expanded = false
+                        }
+                    ) {
+                        Text(text = label)
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun ExceptionAlert(
+        viewModel: MovieListViewModel,
+        movieListState: MovieScreenUiState.MovieList.GeneralException
+    ) {
+        AlertDialog(
+            onDismissRequest = { /* Do Nothing */ },
+            title = { Text(getString(R.string.general_error)) },
+            text = { Text(movieListState.exception?.message.orEmpty()) }, // todo show meaningful message
+            buttons = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        modifier = Modifier.padding(8.dp),
+                        onClick = { viewModel.getMovieList(ListType.Popular) }
+                    ) {
+                        Text(getString(R.string._cancel))
+                    }
+                }
+            }
+        )
     }
 }
